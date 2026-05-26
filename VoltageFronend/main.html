@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIM800L Monitor</title>
+  <style>
+    body {
+      font-family: sans-serif; background: #0f1117; color: #e8e6df;
+      min-height: 100vh; margin: 0; padding: 30px;
+      display: flex; flex-direction: column; align-items: center; gap: 20px;
+    }
+    h1 { margin: 0; }
+    #empty { color: #6a6f7a; font-style: italic; margin-top: 40px; }
+    #lamps {
+      display: flex; flex-wrap: wrap; gap: 30px; justify-content: center;
+      margin-top: 20px;
+    }
+    .lamp {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      padding: 20px; border-radius: 12px; background: #181b22; min-width: 140px;
+    }
+    .bulb {
+      width: 100px; height: 100px; border-radius: 50%;
+      background: #2a2d36; border: 3px solid #3a3d46;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 44px; transition: all 0.15s ease; filter: grayscale(1);
+    }
+    .bulb.on {
+      background: #ffcf4a; border-color: #ffd95e; filter: none;
+      box-shadow: 0 0 40px 10px rgba(255,207,74,0.55);
+    }
+    .id { font-size: 16px; color: #8a8f9a; }
+    .label { font-size: 18px; }
+    .label.on { color: #ffcf4a; }
+  </style>
+</head>
+<body>
+  <h1>Qurilmalar holati</h1>
+  <div id="empty">Hozircha hech qaysi qurilma ulanmagan</div>
+  <div id="lamps"></div>
+
+  <script>
+    const BACKEND = "";
+    const lampsEl  = document.getElementById('lamps');
+    const emptyEl  = document.getElementById('empty');
+    const lamps    = {};   // id -> {bulb, label}
+
+    function ensureLamp(id) {
+      if (lamps[id]) return lamps[id];
+      const wrap  = document.createElement('div');
+      wrap.className = 'lamp';
+      const idEl  = document.createElement('div');
+      idEl.className = 'id'; idEl.textContent = 'ID ' + id;
+      const bulb  = document.createElement('div');
+      bulb.className = 'bulb'; bulb.textContent = '💡';
+      const label = document.createElement('div');
+      label.className = 'label'; label.textContent = "O'CHIQ";
+      wrap.appendChild(idEl); wrap.appendChild(bulb); wrap.appendChild(label);
+      lampsEl.appendChild(wrap);
+      lamps[id] = { bulb, label };
+      emptyEl.style.display = 'none';
+      return lamps[id];
+    }
+
+    function setLamp(id, value) {
+      const { bulb, label } = ensureLamp(id);
+      if (value === 1) {
+        bulb.classList.add('on');
+        label.textContent = 'YONIQ';
+        label.className = 'label on';
+      } else {
+        bulb.classList.remove('on');
+        label.textContent = "O'CHIQ";
+        label.className = 'label';
+      }
+    }
+
+    function connect() {
+      const es = new EventSource(BACKEND + '/events');
+      es.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        if (data.all) {
+          // Birinchi xabar - barcha mavjud holatlar
+          for (const [id, v] of Object.entries(data.all)) setLamp(id, v);
+        } else if (data.id !== undefined) {
+          setLamp(data.id, data.value);
+        }
+      };
+      es.onerror = () => { es.close(); setTimeout(connect, 1000); };
+    }
+    connect();
+  </script>
+</body>
+</html>

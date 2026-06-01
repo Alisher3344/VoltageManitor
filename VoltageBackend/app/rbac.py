@@ -1,0 +1,49 @@
+"""Role-Based Access Control (RBAC).
+
+Rollar Postgres'da `roles` jadvalida saqlanadi. Har bir rolga tegishli
+ruxsatlar (permissions) shu yerda, kodda belgilangan — bu standart RBAC modeli:
+role -> permissions to'plami.
+"""
+from enum import StrEnum
+
+
+class Permission(StrEnum):
+    DEVICE_READ = "device:read"      # holatlarni ko'rish (monitor uchun ochiq)
+    DEVICE_WRITE = "device:write"    # qurilma holatini o'zgartirish
+    DEVICE_MANAGE = "device:manage"  # qurilma qo'shish/o'chirish
+    USER_MANAGE = "user:manage"      # foydalanuvchilarni boshqarish
+
+
+class RoleName(StrEnum):
+    ADMIN = "admin"
+    OPERATOR = "operator"
+    VIEWER = "viewer"
+
+
+ROLE_PERMISSIONS: dict[str, set[Permission]] = {
+    RoleName.ADMIN: {
+        Permission.DEVICE_READ,
+        Permission.DEVICE_WRITE,
+        Permission.DEVICE_MANAGE,
+        Permission.USER_MANAGE,
+    },
+    RoleName.OPERATOR: {
+        Permission.DEVICE_READ,
+        Permission.DEVICE_WRITE,
+        Permission.DEVICE_MANAGE,
+    },
+    RoleName.VIEWER: {
+        Permission.DEVICE_READ,
+    },
+}
+
+# Boshlang'ich rollar (seed) — (nom, tavsif)
+DEFAULT_ROLES: list[tuple[str, str]] = [
+    (RoleName.ADMIN, "To'liq huquq: qurilmalar va foydalanuvchilar"),
+    (RoleName.OPERATOR, "Qurilmalarni boshqarish va holatni o'zgartirish"),
+    (RoleName.VIEWER, "Faqat ko'rish"),
+]
+
+
+def role_has_permission(role_name: str, permission: Permission) -> bool:
+    return permission in ROLE_PERMISSIONS.get(role_name, set())

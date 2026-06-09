@@ -50,10 +50,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Voltage Monitoring API", version="1.0.0", lifespan=lifespan)
 
+# Eslatma: brauzer "*" origin + credentials kombinatsiyasini rad etadi.
+# Auth Bearer token (localStorage) orqali — cookie ishlatilmaydi —
+# shuning uchun "*" bo'lsa credentials'siz ruxsat beramiz.
+_allow_all = settings.cors_list == ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_list,
-    allow_credentials=True,
+    allow_credentials=not _allow_all,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -89,8 +93,10 @@ async def spa(full_path: str):
             "detail": "Frontend build topilmadi. VoltageFronend ichida "
             "'npm run build' ishga tushiring."
         }
-    candidate = _dist / full_path
-    if full_path and candidate.is_file():
-        return FileResponse(candidate)
+    if full_path:
+        candidate = (_dist / full_path).resolve()
+        # Path traversal himoyasi: faqat dist ichidagi fayllar
+        if candidate.is_file() and candidate.is_relative_to(_dist.resolve()):
+            return FileResponse(candidate)
     # Noma'lum yo'l (masalan /admin, /login) -> SPA index.html
     return FileResponse(_index)

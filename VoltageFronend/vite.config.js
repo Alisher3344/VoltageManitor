@@ -1,9 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// Build natijasi Flask tomonidan (port 5000) bir xil originda beriladi,
+// Build natijasi FastAPI tomonidan (port 5000) bir xil originda beriladi,
 // shuning uchun base '/' qoldiramiz.
-// Dev rejimida (vite, port 5173) SSE/HTTP so'rovlarni Flask backendga proxy qilamiz.
+// Dev rejimida (vite, port 5173) HTTP/SSE so'rovlarni FastAPI backendga proxy qilamiz.
+const backend = { target: 'http://localhost:5000', changeOrigin: true }
+
 export default defineConfig({
   plugins: [react()],
   build: {
@@ -12,9 +14,13 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/events': { target: 'http://localhost:5000', changeOrigin: true },
-      '/status': { target: 'http://localhost:5000', changeOrigin: true },
-      '/update': { target: 'http://localhost:5000', changeOrigin: true },
+      '/auth': backend,
+      '/devices': backend,
+      '/media': backend,
+      '/events': backend,
+      '/status': backend,
+      '/update': backend,
+      '/healthz': backend,
     },
   },
 })

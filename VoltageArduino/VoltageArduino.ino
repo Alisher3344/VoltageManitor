@@ -48,8 +48,11 @@ const char* APN = "internet";
 // masofadan yangilash mumkin (NVS'ga saqlanadi).
 // Agar 5001 firewall'da bloklangan bo'lsa — Pinggy tunnel orqali oching:
 //   ssh -p 443 -R0:localhost:5001 tcp@a.pinggy.io
-const char* DEFAULT_HOST = "213.230.97.201";  // ssmart server public IP
-const int   DEFAULT_PORT = 5001;              // voltage-api TCP ingest
+// Server NAT/CGNAT ortida — to'g'ridan-to'g'ri IP'ga kirib bo'lmaydi.
+// Shuning uchun bore.pub tunnel orqali ulanamiz (bepul, doimiy manzil, o'zgarmaydi).
+// Serverda cron tunnelni doim tirik tutadi: bore.pub:45001 -> localhost:5001
+const char* DEFAULT_HOST = "bore.pub";        // doimiy tunnel manzili
+const int   DEFAULT_PORT = 45001;             // bore.pub porti -> server 5001
 
 // Ixtiyoriy ingest tokeni — backend .env dagi INGEST_TOKEN bilan BIR XIL bo'lsin.
 // Bo'sh "" qoldirilsa, eski "id:value" formati yuboriladi.
@@ -232,9 +235,10 @@ void loop() {
     }
   }
 
-  // 3) Keepalive — har 30s JORIY pin holatini qayta yuboramiz (keshlangan emas).
-  //    Bu har qanday o'tkazib yuborilgan o'zgarishni ≤30s ichida tuzatadi.
-  if (tcpOpen && millis() - lastSendMs > 30000) {
+  // 3) Keepalive — har 10s JORIY pin holatini qayta yuboramiz (keshlangan emas).
+  //    Bu ulanishni ISSIQ tutadi (GPRS/CGNAT bo'sh ulanishni uzmasin) — shunda
+  //    holat o'zgarganda darhol yetib boradi. Eng yomon holatda kechikish ≤10s.
+  if (tcpOpen && millis() - lastSendMs > 10000) {
     if (sendToServer(value)) lastValue = value;
   }
 
@@ -244,7 +248,8 @@ void loop() {
 bool openTcp() {
   String cmd = "AT+CIPSTART=\"TCP\",\"" + serverHost + "\"," + String(serverPort);
   Serial.print("  >> "); Serial.println(cmd);
-  String resp = sendATGetResp(cmd.c_str(), 10000);
+  // "CONNECT" (OK/FAIL/ALREADY) javobi kelishi bilan erta chiqamiz — 10s kutmaymiz
+  String resp = sendATUntil(cmd.c_str(), "CONNECT", 10000);
   Serial.print("  << "); Serial.println(resp);
 
   if (resp.indexOf("CONNECT OK") >= 0 || resp.indexOf("ALREADY CONNECT") >= 0) {
@@ -273,7 +278,8 @@ bool tcpSendLine(const String& line) {
     return false;
   }
   String sendCmd = "AT+CIPSEND=" + String(line.length());
-  String r = sendATGetResp(sendCmd.c_str(), 800);
+  // ">" prompti kelishi bilan erta chiqamiz (800ms emas, ~100ms)
+  String r = sendATUntil(sendCmd.c_str(), ">", 2000);
   if (r.indexOf(">") < 0) {
     tcpOpen = false;
     metaSent = false;
@@ -281,6 +287,16 @@ bool tcpSendLine(const String& line) {
     return false;
   }
   sim800.print(line);
+  // "SEND OK" ni kutamiz (erta chiqish): yetkazilganini tasdiqlaymiz va o'lik
+  // ulanishni DARHOL sezamiz — keyingi keepalive'ni (10s) kutmaymiz.
+  String sr = readUntil("SEND OK", 5000);
+  if (sr.indexOf("SEND OK") < 0) {
+    // Yetkazilmadi (ulanish o'lgan) — belgilab qo'yamiz. lastValue yangilanmagani uchun
+    // keyingi sikl iteratsiyasi (~20ms) qayta ulanib darhol qayta yuboradi (rekursiyasiz).
+    tcpOpen = false;
+    metaSent = false;
+    return false;
+  }
   Serial.print("  OK -> "); Serial.print(line);
   return true;
 }
@@ -316,6 +332,24 @@ String sendATGetResp(const char* cmd, int waitMs) {
     while (sim800.available()) resp += (char)sim800.read();
   }
   return resp;
+}
+
+// Faqat o'qiydi (buyruq yubormaydi), kutilgan token kelishi bilan ERTA qaytadi.
+String readUntil(const char* until, int waitMs) {
+  String resp = "";
+  unsigned long start = millis();
+  while (millis() - start < waitMs) {
+    while (sim800.available()) resp += (char)sim800.read();
+    if (resp.indexOf(until) >= 0) break;   // tezlik: kutilgan javob kelsa darhol chiqamiz
+    delay(1);
+  }
+  return resp;
+}
+
+// Buyruq yuboradi va kutilgan token kelishi bilan ERTA qaytadi (to'liq timeout'ni kutmaydi).
+String sendATUntil(const char* cmd, const char* until, int waitMs) {
+  sim800.println(cmd);
+  return readUntil(until, waitMs);
 }
 
 void showResp(const char* cmd, int waitMs) {

@@ -38,9 +38,10 @@ export function AuthProvider({ children }) {
   }
 
   const canManage = !!user && MANAGE_ROLES.includes(user.role?.name)
+  const isAdmin = user?.role?.name === 'admin'
 
   return (
-    <AuthCtx.Provider value={{ user, loading, login, logout, canManage }}>
+    <AuthCtx.Provider value={{ user, loading, login, logout, canManage, isAdmin }}>
       {children}
     </AuthCtx.Provider>
   )

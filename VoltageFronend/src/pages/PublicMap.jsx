@@ -1,67 +1,37 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import Layout, { LiveBadge } from '../components/Layout'
 import MapView from '../components/MapView'
-import DeviceStats from '../components/DeviceStats'
+import StatCards from '../components/StatCards'
+import DeviceList from '../components/DeviceList'
+import DeviceDetail from '../components/DeviceDetail'
 import { useDeviceStream } from '../hooks/useDeviceStream'
-import { useAuth } from '../auth/AuthContext'
+import { useNow } from '../hooks/useNow'
 
 export default function PublicMap() {
-  const { devices } = useDeviceStream()
-  const { user } = useAuth()
-
-  const total = devices.length
-  const on = devices.filter((d) => d.last_value === 1).length
+  const { byId, devices } = useDeviceStream()
+  const now = useNow()
+  const [selId, setSelId] = useState(null)
+  const selected = selId ? byId[selId] : null
 
   return (
-    <div className="page">
-      <header className="topbar">
-        <h1>Qashqadaryo — Qurilmalar monitoringi</h1>
-        <div className="spacer" />
-        <span className="muted small">
-          Jami {total} · <span className="dot on" /> {on} ·{' '}
-          <span className="dot off" /> {total - on}
-        </span>
-        <Link to="/admin" className="btn">
-          {user ? 'Admin panel' : 'Admin kirish'}
-        </Link>
-      </header>
-
-      <div className="content admin">
+    <Layout
+      title="Qurilmalar monitoringi"
+      subtitle="Qashqadaryo viloyati — real-time holat"
+      actions={<LiveBadge />}
+    >
+      <StatCards devices={devices} />
+      <div className="map-area">
         <div className="map-col">
-          <MapView devices={devices} />
+          <MapView devices={devices} onSelect={setSelId} />
         </div>
-
-        <aside className="panel">
-          <DeviceStats devices={devices} />
-
-          <div className="card">
-            <h3>📡 Qurilmalar ({total})</h3>
-            {total === 0 && (
-              <div className="muted small">Hozircha qurilma yo'q.</div>
-            )}
-            <ul className="dev-list">
-              {devices.map((d) => (
-                <li key={d.id}>
-                  <span className={'dot ' + (d.last_value === 1 ? 'on' : 'off')} />
-                  {d.image_url && (
-                    <img className="dev-thumb-sm" src={d.image_url} alt="" />
-                  )}
-                  <span className="dev-name">
-                    {d.name || d.id}
-                    <span className="muted small"> #{d.id}</span>
-                    {d.address && <div className="muted small">{d.address}</div>}
-                    {d.district && (
-                      <span className="muted small">{d.district}</span>
-                    )}
-                  </span>
-                  <span className={'status-tag ' + (d.last_value === 1 ? 'on' : 'off')}>
-                    {d.last_value === 1 ? 'YONIQ' : "O'CHIQ"}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <aside className="side-panel">
+          <DeviceList devices={devices} onOpen={setSelId} />
         </aside>
       </div>
-    </div>
+
+      {selected && (
+        <DeviceDetail device={selected} now={now} onClose={() => setSelId(null)} />
+      )}
+    </Layout>
   )
 }

@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     http_port: int = 5000         # FastAPI/uvicorn
     cors_origins: str = "*"       # vergul bilan ajratilgan ro'yxat yoki "*"
 
+    # --- Ingest himoyasi (ixtiyoriy) ---
+    # Bo'sh bo'lsa — eski "id:value" formati. O'rnatilsa — "token:id:value" talab
+    # qilinadi (qurilma spoofing'iga qarshi). Arduino'da ham shu token yozilsin.
+    ingest_token: str | None = None
+
     # --- Frontend (React build) ---
     frontend_dist: Path = BASE_DIR.parent / "VoltageFronend" / "dist"
 

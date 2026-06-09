@@ -78,7 +78,19 @@ curl -s http://localhost:5000/status
 
 # ESP32 simulyatsiyasi (xom TCP)
 printf "12:1\n" | nc localhost 5001
+
+# Qurilma tarixi (uptime% + uzilishlar)
+curl -s "http://localhost:5000/devices/12/history?hours=24"
 ```
 
-## Eski Flask
-Avvalgi Flask versiyasi `legacy_flask.py` da arxiv sifatida saqlanadi (ishlatilmaydi).
+## Testlar
+```bash
+cd VoltageBackend
+.venv/bin/pip install pytest pytest-asyncio   # birinchi marta
+.venv/bin/pytest
+```
+
+## Xavfsizlik eslatmalari
+- `JWT_SECRET` va `ADMIN_PASSWORD` ni ishlab chiqarishda albatta almashtiring (startupda ogohlantirish chiqadi).
+- `INGEST_TOKEN` o'rnatilsa, qurilma `TOKEN:id:value` yuboradi — spoofing'ga qarshi.
+- `/auth/login` IP bo'yicha rate-limit qilingan (10 urinish / 10 daqiqa).

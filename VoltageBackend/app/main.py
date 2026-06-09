@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import settings
-from .routers import auth, devices, events
+from .routers import auth, devices, events, geo
 from .seed import seed_roles_and_admin
 from .services.ingest import start_tcp_server
 
@@ -18,8 +18,19 @@ logging.basicConfig(
 log = logging.getLogger("voltage")
 
 
+def _warn_weak_secrets() -> None:
+    if settings.jwt_secret == "dev-secret-change-me":
+        log.warning("JWT_SECRET standart 'dev' qiymatida — ishlab chiqarishda ALMASHTIRING!")
+    if settings.admin_password and len(settings.admin_password) < 10:
+        log.warning("ADMIN_PASSWORD juda kalta/kuchsiz — kuchliroq parol qo'ying.")
+    if settings.ingest_token is None:
+        log.info("INGEST_TOKEN o'rnatilmagan — TCP ingest ochiq (har kim ID nomidan yubora oladi).")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _warn_weak_secrets()
+
     # Redis (pub/sub + ulashilgan klient)
     app.state.redis = aioredis.from_url(settings.redis_url)
 
@@ -66,6 +77,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(devices.router)
 app.include_router(events.router)
+app.include_router(geo.router)
 
 
 @app.get("/healthz", tags=["meta"])

@@ -55,8 +55,8 @@ class DeviceCreate(BaseModel):
     name: str | None = None
     address: str | None = None
     district: str | None = None
-    lat: float | None = None
-    lon: float | None = None
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lon: float | None = Field(default=None, ge=-180, le=180)
 
 
 class DeviceUpdate(BaseModel):
@@ -64,8 +64,8 @@ class DeviceUpdate(BaseModel):
     name: str | None = None
     address: str | None = None
     district: str | None = None
-    lat: float | None = None
-    lon: float | None = None
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lon: float | None = Field(default=None, ge=-180, le=180)
 
 
 class StateUpdate(BaseModel):

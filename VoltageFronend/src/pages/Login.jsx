@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import Icon from '../components/Icon'
 
 export default function Login() {
   const { login } = useAuth()
@@ -27,7 +28,11 @@ export default function Login() {
   return (
     <div className="center">
       <form className="card login" onSubmit={onSubmit}>
-        <h2>Admin kirish</h2>
+        <div className="login-brand">
+          <Icon name="zap" size={30} />
+        </div>
+        <h2>Boshqaruv paneli</h2>
+        <p className="login-sub">Davom etish uchun tizimga kiring</p>
         <label>
           Login
           <input
@@ -47,10 +52,10 @@ export default function Login() {
           />
         </label>
         {error && <div className="form-error">{error}</div>}
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy} className="full">
           {busy ? 'Kirilmoqda…' : 'Kirish'}
         </button>
-        <Link to="/" className="muted small">
+        <Link to="/" className="link-quiet">
           ← Xaritaga qaytish
         </Link>
       </form>

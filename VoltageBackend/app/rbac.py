@@ -9,8 +9,9 @@ from enum import StrEnum
 
 class Permission(StrEnum):
     DEVICE_READ = "device:read"      # holatlarni ko'rish (monitor uchun ochiq)
-    DEVICE_WRITE = "device:write"    # qurilma holatini o'zgartirish
-    DEVICE_MANAGE = "device:manage"  # qurilma qo'shish/o'chirish
+    DEVICE_WRITE = "device:write"    # qurilma holatini o'zgartirish (yoniq/o'chiq)
+    DEVICE_EDIT = "device:edit"      # mavjud qurilma nomi/rasmini tahrirlash
+    DEVICE_MANAGE = "device:manage"  # qo'shish / o'chirish / joylashuvni o'zgartirish
     USER_MANAGE = "user:manage"      # foydalanuvchilarni boshqarish
 
 
@@ -24,13 +25,14 @@ ROLE_PERMISSIONS: dict[str, set[Permission]] = {
     RoleName.ADMIN: {
         Permission.DEVICE_READ,
         Permission.DEVICE_WRITE,
+        Permission.DEVICE_EDIT,
         Permission.DEVICE_MANAGE,
         Permission.USER_MANAGE,
     },
     RoleName.OPERATOR: {
         Permission.DEVICE_READ,
         Permission.DEVICE_WRITE,
-        Permission.DEVICE_MANAGE,
+        Permission.DEVICE_EDIT,
     },
     RoleName.VIEWER: {
         Permission.DEVICE_READ,

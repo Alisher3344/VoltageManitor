@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { buildMask, districtLabels, districtsGeo, outlineGeo, regionBounds } from '../lib/districts'
+import { buildMask, outlineGeo, regionBounds } from '../lib/districts'
+import { deviceStatus, STATUS_LABEL } from '../lib/status'
 
 // Bepul vektor stil (Google EMAS, API kalit kerak emas)
 const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty'
@@ -37,8 +38,8 @@ export default function MapView({
       bounds,
       fitBoundsOptions: { padding: 24 },
       maxBounds: [
-        [bounds[0][0] - 0.4, bounds[0][1] - 0.4],
-        [bounds[1][0] + 0.4, bounds[1][1] + 0.4],
+        [bounds[0][0] - 0.5, bounds[0][1] - 0.5],
+        [bounds[1][0] + 0.5, bounds[1][1] + 0.5],
       ],
       attributionControl: { compact: true },
     })
@@ -50,7 +51,7 @@ export default function MapView({
     })
 
     map.on('load', () => {
-      // Tashqarini xiralashtiruvchi maska
+      // Viloyatdan tashqarini xiralashtiruvchi maska
       map.addSource('mask', { type: 'geojson', data: buildMask() })
       map.addLayer({
         id: 'mask-fill',
@@ -58,15 +59,7 @@ export default function MapView({
         source: 'mask',
         paint: { 'fill-color': '#0b1020', 'fill-opacity': 0.6 },
       })
-      // Tuman chegaralari
-      map.addSource('districts', { type: 'geojson', data: districtsGeo })
-      map.addLayer({
-        id: 'district-line',
-        type: 'line',
-        source: 'districts',
-        paint: { 'line-color': '#8aa0c0', 'line-width': 1, 'line-opacity': 0.7 },
-      })
-      // Viloyat konturi
+      // Faqat Qashqadaryo viloyati konturi (ichki tuman bo'linishlarisiz)
       map.addSource('outline', { type: 'geojson', data: outlineGeo })
       map.addLayer({
         id: 'outline-line',
@@ -74,24 +67,10 @@ export default function MapView({
         source: 'outline',
         paint: { 'line-color': '#818cf8', 'line-width': 2.5 },
       })
-      // Tuman nomlari
-      map.addSource('labels', { type: 'geojson', data: districtLabels() })
-      map.addLayer({
-        id: 'district-labels',
-        type: 'symbol',
-        source: 'labels',
-        layout: {
-          'text-field': ['get', 'name'],
-          'text-size': 13,
-          'text-font': ['Noto Sans Regular'],
-        },
-        paint: {
-          'text-color': '#0f1117',
-          'text-halo-color': '#ffffff',
-          'text-halo-width': 1.4,
-        },
-      })
       setReady(true)
+      // Konteyner balandligi keyin hisoblansa ham xarita to'g'ri to'lsin
+      map.resize()
+      setTimeout(() => map.resize(), 150)
     })
 
     // Bo'sh joyga bosish -> qurilma qo'yish (admin)
@@ -113,12 +92,24 @@ export default function MapView({
     const present = new Set()
 
     for (const d of devices) {
-      if (d.lat == null || d.lon == null) continue
+      // Noto'g'ri koordinatani o'tkazib yuboramiz (xarita yiqilmasligi uchun)
+      if (
+        d.lat == null ||
+        d.lon == null ||
+        d.lat < -90 || d.lat > 90 ||
+        d.lon < -180 || d.lon > 180
+      )
+        continue
       present.add(d.id)
       let entry = markersRef.current[d.id]
       if (!entry) {
+        // Tashqi element — maplibre faqat SHU elementni transform bilan joylashtiradi
         const el = document.createElement('div')
         el.className = 'dev-marker'
+        // Ichki element — barcha vizual + hover/transition shu yerda (pozitsiyaga xalaqit bermaydi)
+        const dot = document.createElement('div')
+        dot.className = 'dev-marker-dot'
+        el.appendChild(dot)
         el.addEventListener('click', (ev) => {
           ev.stopPropagation()
           refs.current.onSelect?.(d.id)
@@ -132,19 +123,19 @@ export default function MapView({
         })
         const popup = new maplibregl.Popup({ offset: 16, closeButton: false })
         marker.setPopup(popup)
-        entry = { marker, el, popup }
+        entry = { marker, el, dot, popup }
         markersRef.current[d.id] = entry
       }
 
       entry.marker.setLngLat([d.lon, d.lat])
       entry.marker.setDraggable(editable)
-      const on = d.last_value === 1
-      entry.el.className = 'dev-marker ' + (on ? 'on' : 'off')
-      entry.el.title = `${d.name || d.id} — ${on ? 'YONIQ' : "O'CHIQ"}`
+      const status = deviceStatus(d)
+      entry.dot.className = 'dev-marker-dot ' + status
+      entry.el.title = `${d.name || d.id} — ${STATUS_LABEL[status]}`
       entry.popup.setHTML(
         (d.image_url ? `<img src="${escapeHtml(d.image_url)}" class="popup-img"/>` : '') +
           `<b>${escapeHtml(d.name || d.id)}</b> <span class="popup-sub">#${escapeHtml(d.id)}</span>` +
-          `<br/>${on ? '🟢 YONIQ' : "⚫ O'CHIQ"}` +
+          `<br/><span class="pop-dot ${status}"></span>${STATUS_LABEL[status]}` +
           (d.address ? `<br/><span class="popup-sub">${escapeHtml(d.address)}</span>` : '') +
           (d.district ? `<br/><span class="popup-sub">${escapeHtml(d.district)}</span>` : '')
       )
@@ -171,9 +162,7 @@ export default function MapView({
         </span>
       </div>
       {styleError && (
-        <div className="map-overlay">
-          Xarita stili yuklanmadi (internet kerak). Tuman chegaralari baribir ko'rinadi.
-        </div>
+        <div className="map-overlay">Xarita stili yuklanmadi (internet kerak).</div>
       )}
       {editable && (
         <div className="map-hint">Qurilma qo'yish uchun xaritaga bosing</div>

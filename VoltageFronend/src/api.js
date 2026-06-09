@@ -53,6 +53,10 @@ export const api = {
   },
   me: () => req('/auth/me'),
   listDevices: () => req('/devices'),
+  listDevicesManage: () => req('/devices/manage'),
+  deviceHistory: (id, hours = 24) =>
+    req(`/devices/${encodeURIComponent(id)}/history?hours=${hours}`),
+  resolveGeo: (url) => req(`/geo/resolve?url=${encodeURIComponent(url)}`),
   createDevice: (data) => req('/devices', json('POST', data)),
   updateDevice: (id, data) => req(`/devices/${encodeURIComponent(id)}`, json('PATCH', data)),
   deleteDevice: (id) => req(`/devices/${encodeURIComponent(id)}`, { method: 'DELETE' }),
@@ -64,4 +68,5 @@ export const api = {
     // Content-Type bermaymiz — brauzer multipart boundary'ni o'zi qo'yadi
     return req(`/devices/${encodeURIComponent(id)}/image`, { method: 'POST', body: fd })
   },
+  deleteImage: (id) => req(`/devices/${encodeURIComponent(id)}/image`, { method: 'DELETE' }),
 }

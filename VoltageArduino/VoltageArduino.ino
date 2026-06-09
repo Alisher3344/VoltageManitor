@@ -42,24 +42,37 @@ const char* DEFAULT_DEVICE_ID = "11";
 
 const char* APN = "internet";
 
-// Backend TCP listener (port 5001) ochiq turgan manzil.
+// Backend TCP listener (port 5001) ochiq turgan manzil — STANDART qiymatlar.
+// Tunnel URL o'zgarsa, qurilmaga SMS yuborib (masalan "172.235.166.211:41663")
+// host/port'ni masofadan yangilash mumkin (NVS'ga saqlanadi).
 // Backend lokal bo'lsa — Pinggy tunnel orqali oching:
 //   ssh -p 443 -R0:localhost:5001 tcp@a.pinggy.io
-// va chiqqan IP:PORT ni shu yerga yozing (SIM800L domen emas, IP kutadi):
-const char* HOST = "172.235.171.65";  // pinggy tunnel IPv4 (run.pinggy-free.link)
-const int   PORT = 35081;             // pinggy tunnel porti
+const char* DEFAULT_HOST = "141.94.45.153";   // pinggy tunnel IPv4 (A-record)
+const int   DEFAULT_PORT = 40345;             // pinggy tunnel porti
+
+// Ixtiyoriy ingest tokeni — backend .env dagi INGEST_TOKEN bilan BIR XIL bo'lsin.
+// Bo'sh "" qoldirilsa, eski "id:value" formati yuboriladi.
+const char* INGEST_TOKEN = "";
 // ====================================
 
 String        deviceId  = "";    // NVS'dan yuklanadi
+String        serverHost = "";    // NVS'dan; bo'sh bo'lsa DEFAULT_HOST
+int           serverPort = 0;     // NVS'dan; 0 bo'lsa DEFAULT_PORT
 int           lastValue = -1;
 bool          tcpOpen    = false;
 unsigned long lastSendMs = 0;
 String        cliBuf     = "";    // Serial buyruq buferi
+String        simIccid   = "";    // SIM seriya raqami (o'zgarmas)
+String        simPhone   = "";    // SIM telefon raqami (ko'pincha bo'sh)
+bool          metaSent   = false; // META har ulanishda bir marta yuboriladi
+bool          resyncNeeded = false; // qayta ulangach joriy holatni majburan yuborish
 
-// -------- ID saqlash (NVS / Preferences) --------
+// -------- Sozlamalarni saqlash (NVS / Preferences) --------
 void loadId() {
-  prefs.begin("voltage", true);                       // read-only
-  deviceId = prefs.getString("id", DEFAULT_DEVICE_ID); // fleshда bo'lmasa - koddagi standart
+  prefs.begin("voltage", true);                        // read-only
+  deviceId   = prefs.getString("id", DEFAULT_DEVICE_ID);
+  serverHost = prefs.getString("host", DEFAULT_HOST);  // SMS bilan o'zgartirilgan bo'lsa o'sha
+  serverPort = prefs.getInt("port", DEFAULT_PORT);
   prefs.end();
 }
 
@@ -72,6 +85,38 @@ void saveId(const String& id) {
   Serial.println(deviceId);
 }
 
+// Yangi server manzilini saqlash (SMS yoki Serial orqali)
+void saveAddress(const String& host, int port) {
+  serverHost = host;
+  serverPort = port;
+  prefs.begin("voltage", false);
+  prefs.putString("host", host);
+  prefs.putInt("port", port);
+  prefs.end();
+  tcpOpen = false;     // qayta ulanishga majbur qilamiz
+  metaSent = false;
+  Serial.printf("Yangi manzil saqlandi: %s:%d\n", host.c_str(), port);
+}
+
+// "host:port" matnidan manzilni ajratib qo'llaydi (SMS/Serial uchun).
+// "SET 1.2.3.4:5678" kabi old qo'shimchaga ham bardosh.
+bool applyAddress(String text) {
+  text.trim();
+  int colon = text.lastIndexOf(':');
+  if (colon < 1) return false;
+  String host = text.substring(0, colon);
+  String portStr = text.substring(colon + 1);
+  host.trim();
+  // hostdan oldingi keraksiz so'zlarni (masalan "SET ") olib tashlash
+  int sp = host.lastIndexOf(' ');
+  if (sp >= 0) host = host.substring(sp + 1);
+  // portdagi raqamlarni olish
+  int port = portStr.toInt();
+  if (host.length() < 3 || port <= 0 || port > 65535) return false;
+  saveAddress(host, port);
+  return true;
+}
+
 // Serial Monitor'dan "id 11" / "id=11" / "id?" buyruqlarini o'qiydi
 void pollSerialConfig() {
   while (Serial.available()) {
@@ -82,6 +127,12 @@ void pollSerialConfig() {
         if (cliBuf == "id?") {
           Serial.print("Joriy ID: ");
           Serial.println(deviceId.length() ? deviceId : "(o'rnatilmagan)");
+          Serial.printf("Server: %s:%d\n", serverHost.c_str(), serverPort);
+        } else if (cliBuf.startsWith("addr")) {
+          // "addr 1.2.3.4:5678" — server manzilini qo'lda o'rnatish
+          String v = cliBuf.substring(4);
+          v.replace("=", " ");
+          if (!applyAddress(v)) Serial.println("Foydalanish: addr 1.2.3.4:5678");
         } else if (cliBuf.startsWith("id")) {
           String v = cliBuf.substring(2);
           v.replace("=", " ");
@@ -109,6 +160,8 @@ void setup() {
     Serial.printf("Qurilma ID: %s\n", deviceId.c_str());
   else
     Serial.println("DIQQAT: ID o'rnatilmagan! Serial'ga 'id 11' deb yozing.");
+  Serial.printf("Server manzili: %s:%d\n", serverHost.c_str(), serverPort);
+  Serial.println("(o'zgartirish: SMS yoki Serial 'addr 1.2.3.4:5678')");
 
   if (initModem()) {
     openTcp();
@@ -126,7 +179,7 @@ void loop() {
     char c = sim800.read();
     urc += c;
     if (c == '\n') {
-      if (urc.indexOf("CLOSED") >= 0) tcpOpen = false;
+      if (urc.indexOf("CLOSED") >= 0) { tcpOpen = false; metaSent = false; }
       urc = "";
     }
     if (urc.length() > 64) urc = "";
@@ -138,39 +191,64 @@ void loop() {
     return;
   }
 
-  // Ulanish uzilgan bo'lsa — har 20s modemni qayta tekshirib ulaymiz
+  // Ulanish uzilgan bo'lsa — har 20s modemni qayta tekshirib ulaymiz.
+  // Bundan oldin SMS'ni tekshiramiz: host/port noto'g'ri bo'lsa, SMS orqali
+  // yangi manzil kelган bo'lishi mumkin ("172.235.166.211:41663").
   static unsigned long lastReinit = 0;
   if (!tcpOpen && millis() - lastReinit > 20000) {
     lastReinit = millis();
     Serial.println("Qayta ulanish...");
-    if (initModem()) openTcp();
+    if (initModem()) {
+      checkSms();        // SMS orqali yangi host:port kelgan bo'lsa qo'llaydi
+      if (!openTcp()) {
+        Serial.println("  TCP ulanmadi — SMS kutilmoqda (host:port yuboring)");
+      }
+    }
   }
 
-  // Tashqi signal: 3.3V -> HIGH -> 1, 0V -> LOW -> 0
+  // Ulangach SIM ma'lumotlarini (META) bir marta yuboramiz
+  if (tcpOpen && !metaSent) {
+    if (sendMeta()) metaSent = true;
+  }
+
+  // Tashqi signal: 3.3V -> HIGH -> 1, 0V -> LOW -> 0  (HAR doim joriy holat o'qiladi)
   int value = digitalRead(SIGNAL_PIN);
 
+  // 1) Holat o'zgarsa — darhol yuborishga urinamiz (kerak bo'lsa qayta ulanadi)
   if (value != lastValue) {
     Serial.printf("Holat: %d\n", value);
-    // Faqat muvaffaqiyatli yuborilgandagina yangilaymiz
-    if (sendToServer(value)) lastValue = value;
+    if (sendToServer(value)) {
+      lastValue = value;
+      resyncNeeded = false;
+    }
+  }
+  // 2) Qayta ulangandan keyin — o'zgarish bo'lmasa ham joriy holatni MAJBURAN
+  //    yuboramiz (uzilish vaqtidagi o'zgarishni server o'tkazib yuborган bo'lishi mumkin)
+  else if (tcpOpen && resyncNeeded) {
+    if (sendToServer(value)) {
+      lastValue = value;
+      resyncNeeded = false;
+    }
   }
 
-  // Keepalive — har 30s holatni qayta yuboradi
-  if (tcpOpen && lastValue >= 0 && millis() - lastSendMs > 30000) {
-    sendToServer(lastValue);
+  // 3) Keepalive — har 30s JORIY pin holatini qayta yuboramiz (keshlangan emas).
+  //    Bu har qanday o'tkazib yuborilgan o'zgarishni ≤30s ichida tuzatadi.
+  if (tcpOpen && millis() - lastSendMs > 30000) {
+    if (sendToServer(value)) lastValue = value;
   }
 
   delay(20);
 }
 
 bool openTcp() {
-  String cmd = "AT+CIPSTART=\"TCP\",\"" + String(HOST) + "\"," + String(PORT);
+  String cmd = "AT+CIPSTART=\"TCP\",\"" + serverHost + "\"," + String(serverPort);
   Serial.print("  >> "); Serial.println(cmd);
   String resp = sendATGetResp(cmd.c_str(), 10000);
   Serial.print("  << "); Serial.println(resp);
 
   if (resp.indexOf("CONNECT OK") >= 0 || resp.indexOf("ALREADY CONNECT") >= 0) {
     tcpOpen = true;
+    resyncNeeded = true;   // qayta ulandik — joriy holatni majburan qayta yuboramiz
     return true;
   }
   sendAT("AT+CIPSHUT", 1000);
@@ -182,27 +260,43 @@ bool openTcp() {
   return false;
 }
 
-bool sendToServer(int value) {
+// Token prefiksi (yoqilgan bo'lsa)
+String tokenPrefix() {
+  return (strlen(INGEST_TOKEN) > 0) ? (String(INGEST_TOKEN) + ":") : "";
+}
+
+// Bitta qatorni TCP orqali yuboradi (CIPSEND). Uzilsa qayta ulanib urinadi.
+bool tcpSendLine(const String& line) {
   if (!tcpOpen && !openTcp()) {
     Serial.println("  X (ulanmadi)");
     return false;
   }
-
-  // Format: "ID:value\n"   masalan "11:1\n"  (sayt shu ID bo'yicha topadi)
-  String msg = deviceId + ":" + String(value) + "\n";
-
-  String sendCmd = "AT+CIPSEND=" + String(msg.length());
+  String sendCmd = "AT+CIPSEND=" + String(line.length());
   String r = sendATGetResp(sendCmd.c_str(), 800);
   if (r.indexOf(">") < 0) {
     tcpOpen = false;
-    if (openTcp()) return sendToServer(value);
+    metaSent = false;
+    if (openTcp()) return tcpSendLine(line);
     return false;
   }
-
-  sim800.print(msg);
-  lastSendMs = millis();
-  Serial.print("  OK -> "); Serial.print(msg);
+  sim800.print(line);
+  Serial.print("  OK -> "); Serial.print(line);
   return true;
+}
+
+bool sendToServer(int value) {
+  // Format: "ID:value\n" (token yoqilgan bo'lsa "TOKEN:ID:value\n")
+  String msg = tokenPrefix() + deviceId + ":" + String(value) + "\n";
+  if (!tcpSendLine(msg)) return false;
+  lastSendMs = millis();
+  return true;
+}
+
+// SIM ma'lumotlari: "META:ID:ICCID:PHONE\n" (telefon bo'sh bo'lishi mumkin)
+bool sendMeta() {
+  if (!deviceId.length()) return false;
+  String msg = tokenPrefix() + "META:" + deviceId + ":" + simIccid + ":" + simPhone + "\n";
+  return tcpSendLine(msg);
 }
 
 void sendAT(const char* cmd, int waitMs) {
@@ -269,18 +363,99 @@ bool waitNetwork(int timeoutMs) {
   return false;
 }
 
+// Matndan faqat raqamlarni oladi (ICCID uchun)
+String onlyDigits(const String& s) {
+  String out = "";
+  for (size_t k = 0; k < s.length(); k++) {
+    char c = s[k];
+    if (c >= '0' && c <= '9') out += c;
+  }
+  return out;
+}
+
+// AT+CNUM javobidan telefon raqamini ajratadi: +CNUM: "","+99890...",129
+String parseCnum(const String& r) {
+  int i = r.indexOf("+CNUM:");
+  if (i < 0) return "";
+  int sep = r.indexOf("\",\"", i);   // ism va raqam orasidagi ","
+  if (sep < 0) return "";
+  int start = sep + 3;
+  int end = r.indexOf("\"", start);
+  if (end < 0) return "";
+  return r.substring(start, end);
+}
+
+// SIM ma'lumotlarini o'qiydi (ICCID — seriya, CNUM — telefon, ko'pincha bo'sh)
+void readSimInfo() {
+  simIccid = onlyDigits(sendATGetResp("AT+CCID", 1500));
+  simPhone = parseCnum(sendATGetResp("AT+CNUM", 1500));
+  Serial.print("   SIM ICCID: ");
+  Serial.println(simIccid.length() ? simIccid : "(yo'q)");
+  Serial.print("   SIM telefon: ");
+  Serial.println(simPhone.length() ? simPhone : "(yo'q / operator yozmagan)");
+}
+
+// Kelgan SMS'larni o'qiydi: "host:port" topilsa qo'llaydi, so'ng SMS'larni o'chiradi.
+// TCP ulanmaganda chaqiriladi — tunnel manzili o'zgarsa SMS bilan tuzatish uchun.
+void checkSms() {
+  sendAT("AT+CMGF=1", 400);                       // matn rejimi
+  String r = sendATGetResp("AT+CMGL=\"REC UNREAD\"", 5000);
+  if (r.indexOf("+CMGL:") < 0) return;            // yangi SMS yo'q
+  int pos = 0;
+  bool applied = false;
+  while (true) {
+    int idx = r.indexOf("+CMGL:", pos);
+    if (idx < 0) break;
+    int nl = r.indexOf('\n', idx);                // sarlavha satri oxiri
+    if (nl < 0) break;
+    int nl2 = r.indexOf('\n', nl + 1);            // SMS tanasi oxiri
+    String body = (nl2 > 0) ? r.substring(nl + 1, nl2) : r.substring(nl + 1);
+    body.trim();
+    if (body.length() && applyAddress(body)) applied = true;
+    pos = (nl2 > 0) ? nl2 : r.length();
+  }
+  sendAT("AT+CMGDA=\"DEL ALL\"", 2000);           // xotira to'lib qolmasin
+  if (applied) Serial.println("  SMS orqali server manzili yangilandi");
+}
+
 // Modemni bosqichma-bosqich tekshirib ishga tushiradi
 bool initModem() {
   Serial.println("--- Modem tekshiruvi ---");
 
-  if (!atExpect("AT", "OK", 2000)) {
-    Serial.println("XATO: modem javob bermayapti (TXD/RXD ulanishi yoki 5V quvvat?)");
+  // 1) Modem javob berguncha kutamiz — sovuq yoqilishda SIM800L sekin uyg'onadi
+  //    (boot URC'lari: RDY, +CFUN, +CPIN, Call Ready...). Bufferni tozalab,
+  //    AT ni bir necha marta yuboramiz (autobaud + boot uchun ~16s gacha).
+  bool atOk = false;
+  for (int i = 0; i < 16; i++) {
+    while (sim800.available()) sim800.read();   // boot/URC chiqindilarini tozalash
+    if (atExpect("AT", "OK", 1000)) { atOk = true; break; }
+    delay(800);
+  }
+  if (!atOk) {
+    Serial.println("XATO: modem javob bermayapti (TXD/RXD yoki 5V/2A quvvat?)");
     return false;
   }
-  if (!atExpect("AT+CPIN?", "READY", 3000)) {
+  sendAT("ATE0", 300);   // echo off — javoblar toza bo'lsin
+
+  // 2) SIM tayyor (PIN READY) — yoqilгandan keyin bir necha soniya kutishi mumkin
+  bool pinReady = false;
+  for (int i = 0; i < 12; i++) {
+    if (atExpect("AT+CPIN?", "READY", 1000)) { pinReady = true; break; }
+    delay(1000);
+  }
+  if (!pinReady) {
     Serial.println("XATO: SIM yo'q / PIN kerak / noto'g'ri o'rnatilgan");
     return false;
   }
+
+  // 3) Eski/osilgan GPRS kontekstini tozalaymiz — qayta ulanish ishonchli bo'lsin
+  sendAT("AT+CIPSHUT", 2000);
+
+  readSimInfo();   // ICCID + telefon (SIM tayyor bo'lgach)
+
+  // SMS: matn rejimi + avtomatik push o'chiq (biz CMGL bilan so'rab olamiz)
+  sendAT("AT+CMGF=1", 400);
+  sendAT("AT+CNMI=0,0,0,0,0", 400);
 
   int csq = readCsq();
   Serial.printf("   Signal (CSQ): %d  %s\n", csq,
@@ -288,7 +463,7 @@ bool initModem() {
                 : (csq < 10) ? "(kuchsiz)" : "(yaxshi)");
 
   Serial.print("   Tarmoqqa ulanish");
-  if (!waitNetwork(30000)) {
+  if (!waitNetwork(60000)) {   // sovuq yoqilishda ro'yxatdan o'tish uzoqroq bo'lishi mumkin
     Serial.println("XATO: tarmoqqa ro'yxatdan o'tmadi (signal/SIM/tarif?)");
     return false;
   }

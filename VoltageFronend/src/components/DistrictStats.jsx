@@ -1,10 +1,7 @@
-// Qurilmalar statistikasi: jami / yoniq / o'chiq + tumanlar bo'yicha taqsimot
-export default function DeviceStats({ devices }) {
-  const total = devices.length
-  const on = devices.filter((d) => d.last_value === 1).length
-  const off = total - on
+import Icon from './Icon'
 
-  // Tumanlar bo'yicha
+// Tumanlar bo'yicha taqsimot (yoniq/jami nisbati progress bar bilan)
+export default function DistrictStats({ devices }) {
   const byDist = {}
   for (const d of devices) {
     const k = d.district || '— (tumansiz)'
@@ -16,25 +13,13 @@ export default function DeviceStats({ devices }) {
 
   return (
     <div className="card">
-      <h3>📊 Statistika</h3>
-      <div className="stats">
-        <div className="stat">
-          <div className="num">{total}</div>
-          <div className="lbl">Jami</div>
-        </div>
-        <div className="stat on">
-          <div className="num">{on}</div>
-          <div className="lbl">Yoniq</div>
-        </div>
-        <div className="stat off">
-          <div className="num">{off}</div>
-          <div className="lbl">O'chiq</div>
-        </div>
-      </div>
-
-      {dists.length > 0 && (
+      <h3>
+        <Icon name="layers" size={17} /> Tumanlar bo'yicha
+      </h3>
+      {dists.length === 0 ? (
+        <div className="muted small empty">Ma'lumot yo'q.</div>
+      ) : (
         <div className="dist-stats">
-          <div className="muted small">Tumanlar bo'yicha</div>
           {dists.map(([name, s]) => (
             <div className="dist-row" key={name}>
               <span className="dist-name">{name}</span>

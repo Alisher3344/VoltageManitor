@@ -29,14 +29,17 @@ export function useDeviceStream() {
     let es
     let closed = false
     let timer
-    const apply = (id, value) =>
+    // ts — last_seen'ni jonli yangilaydi (oflayn aniqlash uchun)
+    const apply = (id, value, ts) =>
       setById((prev) => {
         // Noma'lum ID (qurilma endi ulandi) — to'liq yozuvni olish uchun qayta yuklaymiz
         if (!prev[id]) {
           refetchRef.current?.()
           return prev
         }
-        return { ...prev, [id]: { ...prev[id], last_value: Number(value) } }
+        const patch = { last_value: Number(value) }
+        if (ts) patch.last_seen = ts
+        return { ...prev, [id]: { ...prev[id], ...patch } }
       })
 
     function connect() {
@@ -56,7 +59,7 @@ export function useDeviceStream() {
             return next
           })
         } else if (data.id !== undefined) {
-          apply(data.id, data.value)
+          apply(data.id, data.value, data.ts)
         }
       }
       es.onerror = () => {

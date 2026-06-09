@@ -43,16 +43,17 @@ const char* DEFAULT_DEVICE_ID = "11";
 const char* APN = "internet";
 
 // Backend TCP listener (port 5001) ochiq turgan manzil — STANDART qiymatlar.
-// Tunnel URL o'zgarsa, qurilmaga SMS yuborib (masalan "172.235.166.211:41663")
-// host/port'ni masofadan yangilash mumkin (NVS'ga saqlanadi).
-// Backend lokal bo'lsa — Pinggy tunnel orqali oching:
+// ssmart serveri (voltage-api konteyneri 0.0.0.0:5001 host'ga chiqarilgan).
+// Manzil o'zgarsa, qurilmaga SMS yuborib (masalan "1.2.3.4:5001") host/port'ni
+// masofadan yangilash mumkin (NVS'ga saqlanadi).
+// Agar 5001 firewall'da bloklangan bo'lsa — Pinggy tunnel orqali oching:
 //   ssh -p 443 -R0:localhost:5001 tcp@a.pinggy.io
-const char* DEFAULT_HOST = "141.94.45.153";   // pinggy tunnel IPv4 (A-record)
-const int   DEFAULT_PORT = 40345;             // pinggy tunnel porti
+const char* DEFAULT_HOST = "213.230.97.201";  // ssmart server public IP
+const int   DEFAULT_PORT = 5001;              // voltage-api TCP ingest
 
 // Ixtiyoriy ingest tokeni — backend .env dagi INGEST_TOKEN bilan BIR XIL bo'lsin.
 // Bo'sh "" qoldirilsa, eski "id:value" formati yuboriladi.
-const char* INGEST_TOKEN = "";
+const char* INGEST_TOKEN = "7674e77e034dc6b2";
 // ====================================
 
 String        deviceId  = "";    // NVS'dan yuklanadi

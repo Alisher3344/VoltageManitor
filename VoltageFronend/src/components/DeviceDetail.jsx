@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api } from '../api'
+import { api, withBase } from '../api'
 import Icon from './Icon'
 import { deviceStatus, STATUS_LABEL, timeAgo, formatDateTime } from '../lib/status'
 
@@ -81,7 +81,7 @@ export default function DeviceDetail({ device, now, onClose }) {
           </button>
         </div>
 
-        {device.image_url && <img className="dev-thumb" src={device.image_url} alt="" />}
+        {device.image_url && <img className="dev-thumb" src={withBase(device.image_url)} alt="" />}
 
         <div className="detail-status">
           <span className={'status-tag ' + status}>{STATUS_LABEL[status]}</span>

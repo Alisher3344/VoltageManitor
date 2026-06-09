@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { api } from '../api'
+import { api, withBase } from '../api'
 
 // Qurilmalar ro'yxati (/devices) + jonli holat (/events SSE).
 // byId: { id -> device }, devices: massiv, refetch(): ro'yxatni qayta yuklash.
@@ -43,7 +43,7 @@ export function useDeviceStream() {
       })
 
     function connect() {
-      es = new EventSource('/events')
+      es = new EventSource(withBase('/events'))
       es.onmessage = (e) => {
         const data = JSON.parse(e.data)
         if (data.all) {

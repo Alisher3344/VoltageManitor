@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { buildMask, outlineGeo, regionBounds } from '../lib/districts'
+import { withBase } from '../api'
 import { deviceStatus, STATUS_LABEL } from '../lib/status'
 
 // Bepul vektor stil (Google EMAS, API kalit kerak emas)
@@ -51,6 +52,27 @@ export default function MapView({
     })
 
     map.on('load', () => {
+      // Joy nomlarini o'zbek tiliga o'tkazish: vektor stildagi barcha matn
+      // qatlamlarining text-field'ini name:uz ga almashtiramiz (fallback: latin/en/name).
+      const UZ_LABEL = [
+        'coalesce',
+        ['get', 'name:uz'],
+        ['get', 'name:uz-Latn'],
+        ['get', 'name:latin'],
+        ['get', 'name:en'],
+        ['get', 'name'],
+      ]
+      for (const layer of map.getStyle().layers) {
+        if (layer.type !== 'symbol') continue
+        // text-field bor qatlamlarnigina o'zgartiramiz (ikona-only qatlamlarni emas)
+        if (map.getLayoutProperty(layer.id, 'text-field') == null) continue
+        try {
+          map.setLayoutProperty(layer.id, 'text-field', UZ_LABEL)
+        } catch {
+          /* ba'zi qatlamlar o'zgarmasligi mumkin — e'tiborsiz */
+        }
+      }
+
       // Viloyatdan tashqarini xiralashtiruvchi maska
       map.addSource('mask', { type: 'geojson', data: buildMask() })
       map.addLayer({
@@ -133,7 +155,7 @@ export default function MapView({
       entry.dot.className = 'dev-marker-dot ' + status
       entry.el.title = `${d.name || d.id} — ${STATUS_LABEL[status]}`
       entry.popup.setHTML(
-        (d.image_url ? `<img src="${escapeHtml(d.image_url)}" class="popup-img"/>` : '') +
+        (d.image_url ? `<img src="${escapeHtml(withBase(d.image_url))}" class="popup-img"/>` : '') +
           `<b>${escapeHtml(d.name || d.id)}</b> <span class="popup-sub">#${escapeHtml(d.id)}</span>` +
           `<br/><span class="pop-dot ${status}"></span>${STATUS_LABEL[status]}` +
           (d.address ? `<br/><span class="popup-sub">${escapeHtml(d.address)}</span>` : '') +

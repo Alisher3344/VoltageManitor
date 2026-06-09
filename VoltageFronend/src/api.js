@@ -1,6 +1,12 @@
 // Backend API yordamchilari + token boshqaruvi (JWT localStorage'da)
 const TOKEN_KEY = 'voltage_token'
 
+// Subpath qo'llab-quvvatlash: prod'da '/Voltage/', dev'da '/'.
+// Barcha API/SSE/rasm so'rovlari shu prefiks bilan yuboriladi; nginx esa
+// /Voltage/ prefiksini kesib backendga (root yo'llarga) uzatadi.
+export const withBase = (p) =>
+  import.meta.env.BASE_URL.replace(/\/$/, '') + '/' + String(p).replace(/^\//, '')
+
 export const getToken = () => localStorage.getItem(TOKEN_KEY)
 export const setToken = (t) =>
   t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY)
@@ -9,7 +15,7 @@ async function req(path, opts = {}) {
   const headers = { ...(opts.headers || {}) }
   const token = getToken()
   if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch(path, { ...opts, headers })
+  const res = await fetch(withBase(path), { ...opts, headers })
   if (!res.ok) {
     let detail
     try {
@@ -33,7 +39,7 @@ const json = (method, body) => ({
 export const api = {
   login: async (username, password) => {
     const body = new URLSearchParams({ username, password })
-    const res = await fetch('/auth/login', {
+    const res = await fetch(withBase('/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body,

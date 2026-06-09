@@ -1,4 +1,5 @@
 import Icon from './Icon'
+import { withBase } from '../api'
 import { deviceStatus, STATUS_LABEL } from '../lib/status'
 
 // Qurilmalar ro'yxati — ochiq (ko'rish/ochish) yoki admin (tahrir/o'chirish) uchun.
@@ -40,7 +41,7 @@ export default function DeviceList({
             >
               <span className={'dot ' + status} />
               {d.image_url ? (
-                <img className="dev-thumb-sm" src={d.image_url} alt="" />
+                <img className="dev-thumb-sm" src={withBase(d.image_url)} alt="" />
               ) : (
                 <span className="dev-thumb-ph">
                   {(d.name || d.id)[0].toUpperCase()}

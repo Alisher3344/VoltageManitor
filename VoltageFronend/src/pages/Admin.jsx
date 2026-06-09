@@ -5,7 +5,7 @@ import DeviceList from '../components/DeviceList'
 import Icon from '../components/Icon'
 import { useDeviceStream } from '../hooks/useDeviceStream'
 import { useAuth } from '../auth/AuthContext'
-import { api } from '../api'
+import { api, withBase } from '../api'
 import { districtAt } from '../lib/districts'
 
 const emptyForm = {
@@ -263,7 +263,7 @@ export default function Admin() {
                 <>
                   <img
                     className="dev-thumb"
-                    src={imageFile ? URL.createObjectURL(imageFile) : form.image_url}
+                    src={imageFile ? URL.createObjectURL(imageFile) : withBase(form.image_url)}
                     alt=""
                   />
                   <button type="button" className="ghost" onClick={removeImage}>

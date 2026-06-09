@@ -358,6 +358,7 @@ String readUntil(const char* until, int waitMs) {
 
 // Buyruq yuboradi va kutilgan token kelishi bilan ERTA qaytadi (to'liq timeout'ni kutmaydi).
 String sendATUntil(const char* cmd, const char* until, int waitMs) {
+  while (sim800.available()) sim800.read();   // eski/stale javoblarni tozalaymiz (xato o'qishni oldini oladi)
   sim800.println(cmd);
   return readUntil(until, waitMs);
 }

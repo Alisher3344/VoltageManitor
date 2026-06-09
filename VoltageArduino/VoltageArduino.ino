@@ -246,6 +246,15 @@ void loop() {
 }
 
 bool openTcp() {
+  // Avval HAQIQIY ulanish holatini tekshiramiz. Agar ulangan bo'lsak, qayta
+  // CIPSTART qilmaymiz — aks holda modem "ERROR"+"ALREADY CONNECT" qaytaradi
+  // (keraksiz shovqin + sekinlik). CIPSTATUS "STATE: CONNECT OK" -> ulangan.
+  String st = sendATUntil("AT+CIPSTATUS", "CONNECT OK", 1500);
+  if (st.indexOf("CONNECT OK") >= 0) {
+    tcpOpen = true;
+    return true;
+  }
+
   String cmd = "AT+CIPSTART=\"TCP\",\"" + serverHost + "\"," + String(serverPort);
   Serial.print("  >> "); Serial.println(cmd);
   // "CONNECT" (OK/FAIL/ALREADY) javobi kelishi bilan erta chiqamiz — 10s kutmaymiz
@@ -297,6 +306,7 @@ bool tcpSendLine(const String& line) {
     metaSent = false;
     return false;
   }
+  tcpOpen = true;   // tasdiqlandi: ulanish ishlayapti — holatni mustahkamlaymiz
   Serial.print("  OK -> "); Serial.print(line);
   return true;
 }

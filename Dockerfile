@@ -4,13 +4,13 @@
 # VoltageFronend ikkalasiga ham kirish uchun.
 # ============================================================
 
-# ---- 1-bosqich: frontend build (base=/Voltage/, vite build buyrug'i bilan) ----
+# ---- 1-bosqich: frontend build (base=/, chiroqbor.ssmart.uz root subdomeni) ----
 FROM node:20-alpine AS frontend
 WORKDIR /fe
 COPY VoltageFronend/package.json VoltageFronend/package-lock.json ./
 RUN npm ci
 COPY VoltageFronend/ ./
-RUN npm run build          # vite.config.js: command==='build' -> base='/Voltage/'
+RUN npm run build          # vite.config.js: base='/'
 
 # ---- 2-bosqich: backend (FastAPI + build natijasini serve qiladi) ----
 FROM python:3.12-slim AS backend

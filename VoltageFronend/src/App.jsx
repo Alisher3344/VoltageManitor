@@ -10,9 +10,9 @@ export default function App() {
     <Routes>
       <Route path="/" element={<PublicMap />} />
       <Route path="/stats" element={<Stats />} />
-      <Route path="/login" element={<Login />} />
+      <Route path="/operatoroomLogin" element={<Login />} />
       <Route
-        path="/admin"
+        path="/operatoroom"
         element={
           <ProtectedRoute>
             <Admin />

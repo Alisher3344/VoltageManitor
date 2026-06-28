@@ -1,9 +1,8 @@
 // Backend API yordamchilari + token boshqaruvi (JWT localStorage'da)
 const TOKEN_KEY = 'voltage_token'
 
-// Subpath qo'llab-quvvatlash: prod'da '/Voltage/', dev'da '/'.
-// Barcha API/SSE/rasm so'rovlari shu prefiks bilan yuboriladi; nginx esa
-// /Voltage/ prefiksini kesib backendga (root yo'llarga) uzatadi.
+// BASE_URL '/' (chiroqbor.ssmart.uz root subdomeni). Barcha API/SSE/rasm
+// so'rovlari same-origin root yo'llarga yuboriladi (/auth, /events, /media...).
 export const withBase = (p) =>
   import.meta.env.BASE_URL.replace(/\/$/, '') + '/' + String(p).replace(/^\//, '')
 

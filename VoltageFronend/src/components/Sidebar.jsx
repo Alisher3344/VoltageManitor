@@ -2,9 +2,9 @@ import { NavLink } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import Icon from './Icon'
 
-// Asosiy navigatsiya yo'llari (chap rail)
+// Asosiy navigatsiya yo'llari (chap rail). Publik "Xarita" (/) havolasi admin
+// menyusida kerak emas — bu yerdan olib tashlandi.
 const NAV = [
-  { to: '/', icon: 'map', label: 'Xarita', end: true },
   { to: '/stats', icon: 'chart', label: 'Statistika' },
 ]
 
@@ -29,7 +29,7 @@ export default function Sidebar() {
           </NavLink>
         ))}
         {canManage && (
-          <NavLink to="/admin" className={itemClass}>
+          <NavLink to="/operatoroom" className={itemClass}>
             <span className="nav-ico">
               <Icon name="sliders" size={21} />
             </span>
@@ -51,7 +51,7 @@ export default function Sidebar() {
             <span className="nav-lbl">Chiqish</span>
           </button>
         ) : (
-          <NavLink to="/login" className={itemClass}>
+          <NavLink to="/operatoroomLogin" className={itemClass}>
             <span className="nav-ico">
               <Icon name="user" size={21} />
             </span>

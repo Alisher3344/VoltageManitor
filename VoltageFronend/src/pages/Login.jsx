@@ -17,7 +17,7 @@ export default function Login() {
     setBusy(true)
     try {
       await login(username, password)
-      navigate('/admin')
+      navigate('/operatoroom')
     } catch (err) {
       setError(err.message || 'Kirish amalga oshmadi')
     } finally {

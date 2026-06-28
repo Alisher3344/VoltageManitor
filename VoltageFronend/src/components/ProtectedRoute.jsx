@@ -5,7 +5,7 @@ export default function ProtectedRoute({ children }) {
   const { user, loading, canManage } = useAuth()
 
   if (loading) return <div className="center muted">Yuklanmoqda…</div>
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) return <Navigate to="/operatoroomLogin" replace />
   if (!canManage)
     return (
       <div className="center muted">

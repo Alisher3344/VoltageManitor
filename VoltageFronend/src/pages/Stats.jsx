@@ -3,6 +3,7 @@ import StatCards from '../components/StatCards'
 import DistrictStats from '../components/DistrictStats'
 import DeviceList from '../components/DeviceList'
 import DeviceTable from '../components/DeviceTable'
+import AlertToasts from '../components/AlertToasts'
 import { useDeviceStream } from '../hooks/useDeviceStream'
 import { useAuth } from '../auth/AuthContext'
 
@@ -31,6 +32,9 @@ export default function Stats() {
 
       {/* SIM ma'lumotlari + Excel — faqat admin/operator */}
       {canManage && <DeviceTable />}
+
+      {/* Holat o'zgarganda yuqori-o'ngda bildirishnoma */}
+      <AlertToasts devices={devices} />
     </Layout>
   )
 }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Layout from '../components/Layout'
 import MapView from '../components/MapView'
 import DeviceList from '../components/DeviceList'
+import AlertToasts from '../components/AlertToasts'
 import Icon from '../components/Icon'
 import { useDeviceStream } from '../hooks/useDeviceStream'
 import { useAuth } from '../auth/AuthContext'
@@ -299,6 +300,9 @@ export default function Admin() {
           />
         </aside>
       </div>
+
+      {/* Holat o'zgarganda yuqori-o'ngda bildirishnoma */}
+      <AlertToasts devices={devices} />
     </Layout>
   )
 }

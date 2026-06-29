@@ -1592,3 +1592,311 @@ button.ghost:hover,
   box-shadow: 0 0 8px var(--on);
   animation: livepulse 1.8s ease-out infinite;
 }
+
+/* ============ SCADA dashboard (publik bosh sahifa) ============ */
+.scada-dash {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  overflow: hidden;
+}
+.dash-rail .nav-item {
+  cursor: default;
+}
+.dash-main {
+  min-width: 0;
+}
+.dash-body {
+  gap: 16px;
+}
+.dash-grid {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+}
+
+/* Panel (umumiy SCADA konteyner) */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 17px;
+  border-bottom: 1px solid var(--border);
+}
+.panel-head h3 {
+  margin: 0;
+  font-family: 'Oswald', 'Manrope', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.net-panel {
+  flex: 1;
+  min-width: 0;
+}
+.side-detail {
+  width: 344px;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+/* Tarmoq sxemasi (SVG) */
+.net-wrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+.net-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(42, 54, 80, 0.22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(42, 54, 80, 0.22) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+.net-flow {
+  stroke-dasharray: 1.4 2.2;
+  animation: netflow 1.4s linear infinite;
+}
+@keyframes netflow {
+  to {
+    stroke-dashoffset: -7.2;
+  }
+}
+.net-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+}
+.net-legend {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  gap: 14px;
+  padding: 7px 12px;
+  font-size: 11.5px;
+  background: rgba(10, 14, 26, 0.8);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  backdrop-filter: blur(8px);
+}
+.net-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+.net-legend .led {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.net-legend .led.on {
+  background: var(--on);
+  box-shadow: 0 0 7px var(--on);
+}
+.net-legend .led.off {
+  background: var(--off);
+  box-shadow: 0 0 7px var(--off);
+}
+
+/* O'ng batafsil panel */
+.node-panel {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+.np-empty {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+  color: var(--faint);
+  min-height: 240px;
+}
+.np-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.np-head h3 {
+  margin: 0;
+  font-family: 'Oswald', 'Manrope', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.np-summary {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 4px;
+}
+.nps-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 13px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.nps-row .dot {
+  margin-right: 6px;
+}
+.nps-row b {
+  font-size: 18px;
+}
+.np-log-head {
+  margin-bottom: 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* ============ Bildirishnoma (toast) — yuqori-o'ng ============ */
+.toast-stack {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 300px;
+  max-width: calc(100vw - 32px);
+}
+.toast {
+  display: flex;
+  gap: 11px;
+  padding: 12px 13px;
+  background: rgba(15, 22, 38, 0.96);
+  border: 1px solid var(--border-2);
+  border-left: 4px solid var(--offline);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+  animation: toastin 0.32s ease-out;
+}
+.toast.on {
+  border-left-color: var(--on);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 18px rgba(34, 197, 94, 0.25);
+}
+.toast.off {
+  border-left-color: var(--off);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 18px rgba(239, 68, 68, 0.3);
+}
+@keyframes toastin {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.toast-ico {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+}
+.toast.on .toast-ico {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--on-2);
+}
+.toast.off .toast-ico {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--off-2);
+}
+.toast-body {
+  flex: 1;
+  min-width: 0;
+}
+.toast-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.toast-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.toast.on .toast-title {
+  color: var(--on-2);
+}
+.toast.off .toast-title {
+  color: var(--off-2);
+}
+.toast-x {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--faint);
+  padding: 2px;
+  cursor: pointer;
+}
+.toast-x:hover {
+  color: var(--text);
+  transform: none;
+  box-shadow: none;
+}
+.toast-name {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.toast-meta {
+  font-size: 11.5px;
+  color: var(--faint);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Dashboard responsivlik */
+@media (max-width: 900px) {
+  .dash-grid {
+    flex-direction: column;
+  }
+  .side-detail {
+    width: 100%;
+    max-height: 300px;
+  }
+  .net-panel {
+    min-height: 320px;
+  }
+}

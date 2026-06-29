@@ -1,13 +1,17 @@
 import { useState } from 'react'
-import MapView from '../components/MapView'
-import DeviceDetail from '../components/DeviceDetail'
+import NetworkMap from '../components/NetworkMap'
+import NodePanel from '../components/NodePanel'
+import StatCards from '../components/StatCards'
+import AlertToasts from '../components/AlertToasts'
 import Icon from '../components/Icon'
+import { LiveBadge } from '../components/Layout'
 import { useDeviceStream } from '../hooks/useDeviceStream'
 import { useNow } from '../hooks/useNow'
 
-// Publik bosh sahifa: butun ekran xarita + tepada SCADA top-bar (brend + jonli
-// sanoq + tarmoq indikatori). Admin paneliga /operatoroomLogin orqali kiradi.
-// Markerga bosilsa detallari o'ng tomondan drawer bo'lib ochiladi.
+// Publik bosh sahifa — SCADA dashboard ko'rinishi (elektrmonitoring dizayni):
+// chap brend rail + tepa KPI kartalar + markazda TARMOQ SXEMASI (real qurilmalar,
+// yoniq/o'chiq) + o'ngda batafsil panel. Holat o'zgarsa yuqori-o'ngda toast.
+// Admin paneliga /operatoroomLogin orqali kiradi.
 export default function PublicMap() {
   const { byId, devices } = useDeviceStream()
   const now = useNow()
@@ -17,48 +21,66 @@ export default function PublicMap() {
   const total = devices.length
   const on = devices.filter((d) => d.last_value === 1).length
   const off = total - on
+  const health = total ? Math.round((on / total) * 100) : 0
+  const healthColor = health > 66 ? 'var(--on)' : health > 33 ? 'var(--warn)' : 'var(--off)'
 
   return (
-    <div className="fullmap">
-      <header className="map-topbar">
-        <div className="mtb-brand">
-          <span className="brand">
-            <Icon name="zap" size={20} />
-          </span>
-          <span className="mtb-brand-text">
-            <span className="mtb-title">Chiroqbor Monitoring</span>
-            <span className="mtb-sub">SCADA · Qashqadaryo</span>
+    <div className="scada-dash">
+      <aside className="sidebar dash-rail">
+        <div className="brand-block">
+          <div className="brand" title="Chiroqbor Monitoring">
+            <Icon name="zap" size={22} />
+          </div>
+          <div className="brand-text">
+            <div className="brand-title">Chiroqbor Monitoring</div>
+            <div className="brand-sub">SCADA · Qashqadaryo</div>
+          </div>
+        </div>
+        <div className="nav">
+          <span className="nav-item active">
+            <span className="nav-ico"><Icon name="map" size={20} /></span>
+            <span className="nav-lbl">Tarmoq sxemasi</span>
           </span>
         </div>
-
-        <div className="map-stats">
-          <span className="ms-item">
-            <span className="ms-num">{total}</span>
-            <span className="ms-lbl">Qurilma</span>
-          </span>
-          <span className="ms-sep" />
-          <span className="ms-item">
-            <span className="ms-dot on" />
-            <span className="ms-num">{on}</span>
-            <span className="ms-lbl">Yoniq</span>
-          </span>
-          <span className="ms-sep" />
-          <span className="ms-item">
-            <span className="ms-dot off" />
-            <span className="ms-num">{off}</span>
-            <span className="ms-lbl">O'chiq</span>
-          </span>
+        <div className="sidebar-foot">
+          <div className="sys-health">
+            <div className="sys-health-top">
+              <span className="sys-health-lbl">Tizim holati</span>
+              <span className="sys-health-num scada-num" style={{ color: healthColor }}>{health}%</span>
+            </div>
+            <div className="sys-health-bar">
+              <span className="sys-health-fill" style={{ width: `${health}%`, background: healthColor }} />
+            </div>
+          </div>
         </div>
+      </aside>
 
-        <span className="online-pill mtb-online">
-          <span className="led" /> Tarmoqda
-        </span>
-      </header>
+      <div className="main dash-main">
+        <header className="main-header">
+          <h1>Hududiy elektr taqsimlash tizimi</h1>
+          <div className="header-actions">
+            <span className="online-pill"><span className="led" /> Tarmoqda</span>
+          </div>
+        </header>
 
-      <MapView devices={devices} onSelect={setSelId} />
-      {selected && (
-        <DeviceDetail device={selected} now={now} onClose={() => setSelId(null)} />
-      )}
+        <div className="main-body dash-body">
+          <StatCards devices={devices} />
+          <div className="dash-grid">
+            <section className="panel net-panel">
+              <div className="panel-head">
+                <h3><Icon name="layers" size={16} /> Tarmoq sxemasi</h3>
+                <LiveBadge />
+              </div>
+              <NetworkMap devices={devices} selId={selId} onSelect={setSelId} />
+            </section>
+            <aside className="panel side-detail">
+              <NodePanel device={selected} now={now} summary={{ total, on, off }} />
+            </aside>
+          </div>
+        </div>
+      </div>
+
+      <AlertToasts devices={devices} />
     </div>
   )
 }

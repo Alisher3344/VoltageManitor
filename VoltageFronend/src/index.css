@@ -90,87 +90,159 @@ body {
   overflow: hidden;
 }
 
-/* ---- Sidebar ---- */
+/* ---- Sidebar (SCADA keng panel) ---- */
 .sidebar {
-  width: 90px;
+  width: 240px;
   flex-shrink: 0;
   background: var(--sidebar);
   backdrop-filter: blur(18px);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 18px 11px;
-  gap: 6px;
+  padding: 0 0 14px;
   z-index: 20;
 }
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 18px;
+  border-bottom: 1px solid var(--border);
+}
 .brand {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
   display: grid;
   place-items: center;
-  font-size: 23px;
+  font-size: 22px;
   background: linear-gradient(135deg, var(--primary), var(--accent-dim));
-  box-shadow: 0 8px 22px rgba(0, 217, 192, 0.5);
-  margin-bottom: 10px;
+  box-shadow: var(--glow);
   flex-shrink: 0;
+}
+.brand-text {
+  min-width: 0;
+  line-height: 1.25;
+}
+.brand-title {
+  font-family: 'Oswald', 'Manrope', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.brand-sub {
+  font-size: 10px;
+  color: var(--faint);
+  letter-spacing: 0.5px;
 }
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  width: 100%;
+  gap: 4px;
+  padding: 14px 12px;
 }
 .sidebar-foot {
   margin-top: auto;
-  width: 100%;
-  padding-top: 10px;
+  padding: 12px 12px 0;
   border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .nav-item {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 5px;
+  gap: 12px;
   width: 100%;
-  padding: 11px 4px;
-  border-radius: 14px;
+  padding: 11px 13px;
+  border-radius: 11px;
   color: var(--muted);
   text-decoration: none;
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
   cursor: pointer;
   background: transparent;
   border: 1px solid transparent;
-  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.12s;
-  font-family: inherit;
+  text-align: left;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  font-family: 'Oswald', 'Manrope', sans-serif;
+  text-transform: uppercase;
 }
 .nav-item:hover {
   background: var(--surface-2);
   color: var(--text);
 }
 .nav-item.active {
-  background: linear-gradient(160deg, rgba(0, 217, 192, 0.24), rgba(0, 217, 192, 0.07));
-  color: var(--primary-2);
-  border-color: rgba(0, 217, 192, 0.38);
-  box-shadow: 0 6px 18px rgba(0, 217, 192, 0.28);
+  background: rgba(0, 217, 192, 0.13);
+  color: var(--accent);
+  border-color: rgba(0, 217, 192, 0.28);
+}
+.nav-lbl {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .nav-ico {
-  font-size: 21px;
+  font-size: 20px;
   line-height: 1;
-}
-.nav-ico.avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 15px;
+  flex-shrink: 0;
+}
+.foot-user .nav-lbl {
+  text-transform: none;
+  font-family: 'Manrope', sans-serif;
+}
+.nav-ico.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
   font-weight: 700;
-  color: #fff;
+  color: var(--bg);
   background: linear-gradient(135deg, var(--primary), var(--accent-dim));
+}
+
+/* Tizim holati ko'rsatkichi (SystemPulse) */
+.sys-health {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 11px 13px;
+}
+.sys-health-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.sys-health-lbl {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.sys-health-num {
+  font-size: 14px;
+  font-weight: 700;
+}
+.sys-health-bar {
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.sys-health-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease, background 0.3s;
 }
 
 /* ---- Main column ---- */
@@ -1313,14 +1385,39 @@ button.ghost:hover,
     grid-template-columns: 1fr;
   }
 }
-@media (max-width: 640px) {
+@media (max-width: 760px) {
+  /* SCADA keng panel -> ixcham ikonka rail */
   .sidebar {
-    width: 70px;
-    padding: 14px 8px;
+    width: 64px;
   }
-  .nav-lbl {
+  .brand-block {
+    justify-content: center;
+    padding: 16px 8px;
+  }
+  .brand-text,
+  .nav-lbl,
+  .sys-health-top,
+  .sys-health-bar {
     display: none;
   }
+  .nav {
+    padding: 12px 8px;
+    align-items: center;
+  }
+  .nav-item {
+    justify-content: center;
+    padding: 11px 4px;
+    gap: 0;
+  }
+  .sidebar-foot {
+    padding: 10px 8px 0;
+    align-items: center;
+  }
+  .sys-health {
+    padding: 8px;
+  }
+}
+@media (max-width: 640px) {
   .main-header,
   .main-body {
     padding-left: 16px;
@@ -1379,3 +1476,41 @@ button.ghost:hover,
 .stat-card.offline::before { background: var(--offline); }
 /* Live/status nuqtalarga SCADA LED yog'dusi */
 .live { color: var(--on-2); background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.3); }
+
+/* Qurilma ro'yxati — SCADA "transformator karta" qatori (chap rangli chiziq) */
+.dev-list li {
+  position: relative;
+  padding-left: 14px;
+}
+.dev-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--offline);
+}
+.dev-list li:has(.dot.on)::before { background: var(--on); }
+.dev-list li:has(.dot.off)::before { background: var(--off); }
+.dev-list .dot.on { box-shadow: 0 0 8px 1px var(--on); }
+.dev-list .dot.off { box-shadow: 0 0 8px 1px var(--off); }
+
+/* Header — "Tarmoqda" jonli indikator (SCADA uslubi) */
+.online-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.online-pill .led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--on);
+  box-shadow: 0 0 8px var(--on);
+  animation: livepulse 1.8s ease-out infinite;
+}

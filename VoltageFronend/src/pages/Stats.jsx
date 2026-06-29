@@ -12,9 +12,16 @@ export default function Stats() {
 
   return (
     <Layout
-      title="Statistika"
-      subtitle="Umumiy ko'rsatkichlar va tumanlar kesimida"
-      actions={<LiveBadge />}
+      title="Boshqaruv paneli"
+      subtitle="Hududiy qurilmalar monitoringi · real vaqt"
+      actions={
+        <>
+          <span className="online-pill">
+            <span className="led" /> Tarmoqda
+          </span>
+          <LiveBadge />
+        </>
+      }
     >
       <StatCards devices={devices} />
       <div className="stats-grid">

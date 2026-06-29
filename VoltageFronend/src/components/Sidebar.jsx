@@ -6,7 +6,10 @@ import Icon from './Icon'
 // SCADA uslubidagi keng yon panel (elektrmonitoring dizayni): brend bloki +
 // nomlangan navigatsiya + pastda "Tizim holati" (yoniq %) ko'rsatkichi.
 // Publik "Xarita" (/) havolasi admin menyusida kerak emas.
-const NAV = [{ to: '/stats', icon: 'chart', label: 'Boshqaruv paneli' }]
+const NAV = [
+  { to: '/xarita', icon: 'map', label: 'Xarita' },
+  { to: '/stats', icon: 'chart', label: 'Boshqaruv paneli' },
+]
 
 const itemClass = ({ isActive }) => 'nav-item' + (isActive ? ' active' : '')
 

@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import PublicMap from './pages/PublicMap'
 import Stats from './pages/Stats'
+import MapPage from './pages/MapPage'
 import Login from './pages/Login'
 import Admin from './pages/Admin'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -9,6 +10,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<PublicMap />} />
+      <Route path="/xarita" element={<MapPage />} />
       <Route path="/stats" element={<Stats />} />
       <Route path="/operatoroomLogin" element={<Login />} />
       <Route

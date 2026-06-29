@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import NetworkMap from '../components/NetworkMap'
+import MapView from '../components/MapView'
 import NodePanel from '../components/NodePanel'
 import StatCards from '../components/StatCards'
 import AlertToasts from '../components/AlertToasts'
@@ -68,10 +68,12 @@ export default function PublicMap() {
           <div className="dash-grid">
             <section className="panel net-panel">
               <div className="panel-head">
-                <h3><Icon name="layers" size={16} /> Tarmoq sxemasi</h3>
+                <h3><Icon name="map" size={16} /> Tarmoq xaritasi</h3>
                 <LiveBadge />
               </div>
-              <NetworkMap devices={devices} selId={selId} onSelect={setSelId} />
+              <div className="net-wrap">
+                <MapView devices={devices} onSelect={setSelId} />
+              </div>
             </section>
             <aside className="panel side-detail">
               <NodePanel device={selected} now={now} summary={{ total, on, off }} />

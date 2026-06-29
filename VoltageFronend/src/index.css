@@ -1,32 +1,35 @@
 :root {
-  /* Surfaces */
-  --bg: #070b16;
-  --sidebar: rgba(11, 16, 30, 0.85);
-  --surface: #10162a;
-  --surface-2: #151d34;
-  --surface-3: #1c2545;
+  /* Surfaces — SCADA panel palitrasi */
+  --bg: #0a0e1a;
+  --sidebar: rgba(15, 22, 38, 0.92);
+  --surface: #0f1626;
+  --surface-2: #161f33;
+  --surface-3: #1e2942;
   /* Lines */
-  --border: rgba(255, 255, 255, 0.06);
-  --border-2: rgba(255, 255, 255, 0.12);
+  --line: #2a3650;
+  --border: rgba(42, 54, 80, 0.7);
+  --border-2: rgba(42, 54, 80, 1);
   /* Text */
-  --text: #e9ecf7;
-  --muted: #9097b0;
-  --faint: #5f667e;
-  /* Accents */
-  --primary: #6366f1;
-  --primary-2: #818cf8;
-  --accent: #22d3ee;
-  --on: #34d399;
-  --on-2: #6ee7b7;
-  --off: #f43f5e;
-  --off-2: #fda4af;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --faint: #64748b;
+  /* Accents — texno-yashil (accent) + sanoat status ranglari */
+  --primary: #00d9c0;
+  --primary-2: #2ee9d3;
+  --accent: #00d9c0;
+  --accent-dim: #0a8b7d;
+  --on: #22c55e;
+  --on-2: #4ade80;
+  --off: #ef4444;
+  --off-2: #f87171;
   --offline: #64748b;
   --offline-2: #cbd5e1;
-  --warn: #fbbf24;
+  --warn: #f59e0b;
   /* FX */
-  --shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
-  --shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.35);
-  --radius: 16px;
+  --shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.4);
+  --glow: 0 0 20px rgba(0, 217, 192, 0.35);
+  --radius: 14px;
   --radius-sm: 11px;
 }
 
@@ -52,12 +55,14 @@ body,
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--text);
-  background:
-    radial-gradient(1200px 700px at 8% -10%, rgba(99, 102, 241, 0.16), transparent 58%),
-    radial-gradient(1000px 600px at 100% 0%, rgba(34, 211, 238, 0.09), transparent 55%),
-    var(--bg);
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(rgba(42, 54, 80, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(42, 54, 80, 0.18) 1px, transparent 1px),
+    radial-gradient(900px 520px at 100% 0%, rgba(0, 217, 192, 0.07), transparent 60%);
+  background-size: 28px 28px, 28px 28px, 100% 100%;
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -106,8 +111,8 @@ body {
   display: grid;
   place-items: center;
   font-size: 23px;
-  background: linear-gradient(135deg, var(--primary), #4f46e5);
-  box-shadow: 0 8px 22px rgba(99, 102, 241, 0.5);
+  background: linear-gradient(135deg, var(--primary), var(--accent-dim));
+  box-shadow: 0 8px 22px rgba(0, 217, 192, 0.5);
   margin-bottom: 10px;
   flex-shrink: 0;
 }
@@ -147,10 +152,10 @@ body {
   color: var(--text);
 }
 .nav-item.active {
-  background: linear-gradient(160deg, rgba(99, 102, 241, 0.24), rgba(99, 102, 241, 0.07));
+  background: linear-gradient(160deg, rgba(0, 217, 192, 0.24), rgba(0, 217, 192, 0.07));
   color: var(--primary-2);
-  border-color: rgba(99, 102, 241, 0.38);
-  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.28);
+  border-color: rgba(0, 217, 192, 0.38);
+  box-shadow: 0 6px 18px rgba(0, 217, 192, 0.28);
 }
 .nav-ico {
   font-size: 21px;
@@ -165,7 +170,7 @@ body {
   font-size: 15px;
   font-weight: 700;
   color: #fff;
-  background: linear-gradient(135deg, var(--primary), #4f46e5);
+  background: linear-gradient(135deg, var(--primary), var(--accent-dim));
 }
 
 /* ---- Main column ---- */
@@ -284,7 +289,7 @@ body {
   border-radius: 11px;
   display: grid;
   place-items: center;
-  background: rgba(99, 102, 241, 0.13);
+  background: rgba(0, 217, 192, 0.13);
   color: var(--primary-2);
   flex-shrink: 0;
 }
@@ -779,10 +784,10 @@ input {
 input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 0 0 3px rgba(0, 217, 192, 0.25);
 }
 input::file-selector-button {
-  background: rgba(99, 102, 241, 0.15);
+  background: rgba(0, 217, 192, 0.15);
   color: var(--primary-2);
   border: 1px solid var(--border-2);
   border-radius: 7px;
@@ -845,12 +850,12 @@ input[type='checkbox'] {
   background: var(--surface-2);
 }
 .dev-table tr.sel {
-  background: rgba(99, 102, 241, 0.12);
+  background: rgba(0, 217, 192, 0.12);
 }
 
 button,
 .btn {
-  background: linear-gradient(135deg, var(--primary), #4f46e5);
+  background: linear-gradient(135deg, var(--primary), var(--accent-dim));
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -864,13 +869,13 @@ button,
   align-items: center;
   justify-content: center;
   gap: 7px;
-  box-shadow: 0 5px 16px rgba(79, 70, 229, 0.4);
+  box-shadow: 0 5px 16px rgba(0, 217, 192, 0.4);
   transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s;
 }
 button:hover,
 .btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 22px rgba(79, 70, 229, 0.55);
+  box-shadow: 0 8px 22px rgba(0, 217, 192, 0.55);
 }
 button:active,
 .btn:active {
@@ -1119,8 +1124,8 @@ button.ghost:hover,
   place-items: center;
   font-size: 30px;
   margin: 0 auto 4px;
-  background: linear-gradient(135deg, var(--primary), #4f46e5);
-  box-shadow: 0 10px 28px rgba(99, 102, 241, 0.5);
+  background: linear-gradient(135deg, var(--primary), var(--accent-dim));
+  box-shadow: 0 10px 28px rgba(0, 217, 192, 0.5);
 }
 .login h2 {
   margin: 0;
@@ -1329,3 +1334,48 @@ button.ghost:hover,
     flex-direction: column;
   }
 }
+
+/* ============ SCADA ko'rinish — tipografiya/aksent (elektrmonitoring zip) ============ */
+.main-header h1,
+.login h2,
+.drawer-head h3,
+.map-region-name,
+.card h3 {
+  font-family: 'Oswald', 'Manrope', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+.nav-item {
+  font-family: 'Oswald', 'Manrope', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.stat-num,
+.map-stats .ms-num,
+.tl-summary b,
+.dev-table td,
+.detail-meta {
+  font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+  font-variant-numeric: tabular-nums;
+}
+/* Yon-chiziq aksenti (StatCard'dagi rangli chiziq kabi) */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--primary);
+}
+.stat-card.on::before { background: var(--on); }
+.stat-card.off::before { background: var(--off); }
+.stat-card.accent::before { background: var(--accent); }
+.stat-card.offline::before { background: var(--offline); }
+/* Live/status nuqtalarga SCADA LED yog'dusi */
+.live { color: var(--on-2); background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.3); }
